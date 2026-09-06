@@ -15,6 +15,8 @@ export default defineConfig({
       ENCRYPTION_KEY:
         "0000000000000000000000000000000000000000000000000000000000000000",
       META_APP_SECRET: "test-meta-app-secret",
+      ZERNIO_WEBHOOK_SECRET: "test-zernio-webhook-secret",
+      ZERNIO_API_KEY: "test-zernio-api-key",
     },
     clearMocks: true,
   },
