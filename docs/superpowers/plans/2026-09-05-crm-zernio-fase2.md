@@ -1449,7 +1449,7 @@ Desde un celular de prueba, enviar un WhatsApp al número de prueba (+1 555-649-
 Expected:
 1. El mensaje aparece en el inbox del CRM en segundos.
 2. La IA responde automáticamente — el envío ahora corre por `sendZernioText`, no por Meta directo.
-3. El contacto aparece en el Kanban.
+3. El contacto aparece en Contactos y la conversación en el inbox (el Kanban no se puebla automáticamente en este alcance — eso depende de una automation con create_deal, fuera del alcance de esta fase).
 4. En Supabase, la fila de `conversations` correspondiente tiene `zernio_conversation_id` poblado.
 
 - [ ] **Step 8: Confirmar aislamiento del path `meta_direct`**

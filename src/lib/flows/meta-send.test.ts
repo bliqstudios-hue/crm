@@ -150,7 +150,12 @@ describe('engineSendText — zernio', () => {
         content_text: 'Hola',
         message_id: 'wamid.XYZ',
         status: 'sent',
+        sender_type: 'bot',
+        ai_generated: false,
       }),
+    ])
+    expect(h.state.updatedConversations).toEqual([
+      expect.objectContaining({ last_message_text: 'Hola' }),
     ])
   })
 

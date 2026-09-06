@@ -49,7 +49,7 @@ export async function sendZernioText(
     throw new Error('ZERNIO_API_KEY is not configured')
   }
 
-  const url = `${ZERNIO_API_BASE}/inbox/conversations/${conversationId}/messages`
+  const url = `${ZERNIO_API_BASE}/inbox/conversations/${encodeURIComponent(conversationId)}/messages`
   const response = await fetch(url, {
     method: 'POST',
     headers: {

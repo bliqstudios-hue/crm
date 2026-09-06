@@ -2,8 +2,14 @@ import { NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyZernioWebhookSignature } from '@/lib/whatsapp/zernio-signature'
 import { findOrCreateContact, findOrCreateConversation } from '@/lib/whatsapp/contact-conversation'
+import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { reopenClosedConversation } from '@/lib/conversations/reopen'
 import { dispatchInboundToAiReply } from '@/lib/ai/auto-reply'
+
+// The `after()` callback in POST runs within this route's max duration.
+// It awaits an AI auto-reply call, so give it headroom beyond the
+// platform default (Vercel clamps this to the plan's ceiling).
+export const maxDuration = 60
 
 // Lazy-initialized to avoid build-time crash when env vars are missing —
 // same pattern as src/app/api/whatsapp/webhook/route.ts.
@@ -116,12 +122,13 @@ async function processZernioEvent(payload: ZernioMessageReceivedPayload) {
   }
   const config = configRows[0]
 
-  const senderPhone = payload.message.sender.phoneNumber
-  if (!senderPhone) {
+  const rawSenderPhone = payload.message.sender.phoneNumber
+  if (!rawSenderPhone) {
     // BSUID-only sender (Meta's April 2026+ rollout) — not supported in v1.
     console.warn('[zernio-webhook] message has no sender.phoneNumber; skipping:', payload.message.id)
     return
   }
+  const senderPhone = normalizePhone(rawSenderPhone)
   const contactName = payload.conversation.participantName || senderPhone
 
   const contactOutcome = await findOrCreateContact(db, config.account_id, config.user_id, senderPhone, contactName)
