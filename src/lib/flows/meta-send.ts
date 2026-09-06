@@ -9,6 +9,7 @@ import {
 } from '@/lib/whatsapp/meta-api'
 import type { InteractiveMessagePayload } from '@/lib/whatsapp/interactive'
 import { decrypt } from '@/lib/whatsapp/encryption'
+import { sendZernioText } from '@/lib/whatsapp/zernio-api'
 import {
   sanitizePhoneForMeta,
   isValidE164,
@@ -89,6 +90,53 @@ export async function engineSendText(
     .single()
   if (configErr || !config) {
     throw new Error('WhatsApp not configured for this account')
+  }
+
+  if (config.messaging_provider === 'zernio') {
+    const { data: conversationRow, error: convErr } = await db
+      .from('conversations')
+      .select('zernio_conversation_id')
+      .eq('id', args.conversationId)
+      .single()
+    if (convErr || !conversationRow?.zernio_conversation_id) {
+      throw new Error(
+        'conversation has no zernio_conversation_id yet — cannot send via Zernio before the contact has messaged in'
+      )
+    }
+    const zernioAccountId = (config.zernio_credentials as { accountId?: string } | null)?.accountId
+    if (!zernioAccountId) {
+      throw new Error('whatsapp_config.zernio_credentials.accountId is missing')
+    }
+
+    const result = await sendZernioText({
+      accountId: zernioAccountId,
+      conversationId: conversationRow.zernio_conversation_id,
+      message: args.text,
+    })
+
+    const { error: msgErr } = await db.from('messages').insert({
+      conversation_id: args.conversationId,
+      sender_type: 'bot',
+      content_type: 'text',
+      content_text: args.text,
+      message_id: result.messageId,
+      status: 'sent',
+      ai_generated: args.aiGenerated ?? false,
+    })
+    if (msgErr) {
+      throw new Error(`sent to Zernio but DB insert failed: ${msgErr.message}`)
+    }
+
+    await db
+      .from('conversations')
+      .update({
+        last_message_text: args.text,
+        last_message_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', args.conversationId)
+
+    return { whatsapp_message_id: result.messageId }
   }
 
   const accessToken = decrypt(config.access_token)
