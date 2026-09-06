@@ -106,17 +106,20 @@ describe("lastNDayKeys", () => {
 
 describe("mondayIndex", () => {
   it("maps Monday → 0 and Sunday → 6", () => {
-    expect(mondayIndex(new Date("2026-05-18"))).toBe(0); // Mon
-    expect(mondayIndex(new Date("2026-05-19"))).toBe(1); // Tue
-    expect(mondayIndex(new Date("2026-05-23"))).toBe(5); // Sat
-    expect(mondayIndex(new Date("2026-05-24"))).toBe(6); // Sun
+    // Local constructor (not a date-only ISO string) — ISO date-only
+    // strings parse as UTC midnight, which getDay() (local-timezone)
+    // can roll back to the previous day depending on the machine's TZ.
+    expect(mondayIndex(new Date(2026, 4, 18))).toBe(0); // Mon
+    expect(mondayIndex(new Date(2026, 4, 19))).toBe(1); // Tue
+    expect(mondayIndex(new Date(2026, 4, 23))).toBe(5); // Sat
+    expect(mondayIndex(new Date(2026, 4, 24))).toBe(6); // Sun
   });
 
   it("aligns with DOW_SHORT_MON_FIRST labels", () => {
-    expect(DOW_SHORT_MON_FIRST[mondayIndex(new Date("2026-05-18"))]).toBe(
+    expect(DOW_SHORT_MON_FIRST[mondayIndex(new Date(2026, 4, 18))]).toBe(
       "Mon",
     );
-    expect(DOW_SHORT_MON_FIRST[mondayIndex(new Date("2026-05-24"))]).toBe(
+    expect(DOW_SHORT_MON_FIRST[mondayIndex(new Date(2026, 4, 24))]).toBe(
       "Sun",
     );
   });
